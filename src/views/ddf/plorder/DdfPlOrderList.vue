@@ -29,70 +29,85 @@
       <template #htmlSlot="{text}">
          <div v-html="text"></div>
       </template>
-     <template #img="{ text }">
-       <TableImg :size="60" :simpleShow="true" :imgList="text" />
-     </template>
-     <template #imgs="{ text }"> <TableImg :size="60" :imgList="text" /> </template>
-      <!--省市区字段回显插槽-->
-      <template #pcaSlot="{text}">
+       <!--省市区字段回显插槽-->
+       <template #pcaSlot="{text}">
          {{ getAreaTextByCode(text) }}
-      </template>
+       </template>
       <template #fileSlot="{text}">
          <span v-if="!text" style="font-size: 12px;font-style: italic;">无文件</span>
          <a-button v-else :ghost="true" type="primary" preIcon="ant-design:download-outlined" size="small" @click="downloadFile(text)">下载</a-button>
       </template>
     </BasicTable>
+   <!--子表表格tab-->
+    <a-tabs defaultActiveKey="1">
+        <a-tab-pane tab="计划明细" key="1" >
+           <DdfPlOrderdetailList/>
+        </a-tab-pane>
+     </a-tabs>
     <!-- 表单区域 -->
-    <DdfCaGoodsModal @register="registerModal" @success="handleSuccess"></DdfCaGoodsModal>
+    <DdfPlOrderModal @register="registerModal" @success="handleSuccess"></DdfPlOrderModal>
   </div>
 </template>
 
-<script lang="ts" name="ddfcagoods-ddfCaGoods" setup>
-  import {ref, computed, unref} from 'vue';
-  import {BasicTable, useTable, TableAction, TableImg} from '/@/components/Table';
-  import {useModal} from '/@/components/Modal';
+<script lang="ts" name="ddfplorder-ddfPlOrder" setup>
+  import {ref, computed, unref,provide} from 'vue';
+  import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
-  import DdfCaGoodsModal from './components/DdfCaGoodsModal.vue'
-  import {columns, searchFormSchema} from './DdfCaGoods.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './DdfCaGoods.api';
-  import { downloadFile } from '/@/utils/common/renderUtils';
-  const checkedKeys = ref<Array<string | number>>([]);
+  import {useModal} from '/@/components/Modal';
+  import DdfPlOrderModal from './components/DdfPlOrderModal.vue'
+  import DdfPlOrderdetailList from './DdfPlOrderdetailList.vue'
+  import {columns, searchFormSchema} from './DdfPlOrder.data';
+  import {
+    list,
+    deleteOne,
+    batchDelete,
+    getImportUrl,
+    getExportUrl,
+    matchPlOrder
+  } from './DdfPlOrder.api';
+  import {downloadFile} from '/@/utils/common/renderUtils';
   //注册model
   const [registerModal, {openModal}] = useModal();
-  //注册table数据
+   //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '平台商品',
+           title: '计划订单',
            api: list,
            columns,
            canResize:false,
+           rowSelection: {type: 'radio'},
            formConfig: {
-              //labelWidth: 120,
-              schemas: searchFormSchema,
-              autoSubmitOnEnter:true,
-              showAdvancedButton:true,
-              fieldMapToNumber: [
-              ],
-              fieldMapToTime: [
-              ],
+                schemas: searchFormSchema,
+                fieldMapToNumber: [
+                ],
+                fieldMapToTime: [
+                ],
             },
            actionColumn: {
                width: 120,
                fixed:'right'
-            },
-      },
-       exportConfig: {
-            name:"平台商品",
+           },
+           pagination:{
+               current: 1,
+               pageSize: 5,
+               pageSizeOptions: ['5', '10', '20'],
+           }
+        },
+        exportConfig: {
+            name:"计划订单",
             url: getExportUrl,
-          },
-          importConfig: {
+        },
+        importConfig: {
             url: getImportUrl,
             success: handleSuccess
-          },
-  })
+        },
+    })
 
   const [registerTable, {reload},{ rowSelection, selectedRowKeys }] = tableContext
 
+  const mainId = computed(() => (unref(selectedRowKeys).length > 0 ? unref(selectedRowKeys)[0] : ''));
+  //下发 mainId,子组件接收
+  provide('mainId', mainId);
    /**
     * 新增事件
     */
@@ -128,11 +143,15 @@
   async function handleDelete(record) {
      await deleteOne({id: record.id}, handleSuccess);
    }
+
+   async function handleMach(record) {
+     await matchPlOrder({id: record.id}, handleSuccess);
+   }
    /**
     * 批量删除事件
     */
   async function batchHandleDelete() {
-     await batchDelete({ids: selectedRowKeys.value}, handleSuccess);
+     await batchDelete({ids: selectedRowKeys.value},handleSuccess);
    }
    /**
     * 成功回调
@@ -151,24 +170,31 @@
          }
        ]
    }
-     /**
-        * 下拉操作栏
-        */
-  function getDropDownAction(record){
-       return [
-         {
-           label: '详情',
-           onClick: handleDetail.bind(null, record),
-         }, {
-           label: '删除',
-           popConfirm: {
-             title: '是否确认删除',
-             confirm: handleDelete.bind(null, record),
-           }
-         }
-       ]
-   }
 
+
+  /**
+   * 下拉操作栏
+   */
+  function getDropDownAction(record){
+    return [
+      {
+        label: '详情',
+        onClick: handleDetail.bind(null, record),
+      }, {
+        label: '删除',
+        popConfirm: {
+          title: '是否确认删除',
+          confirm: handleDelete.bind(null, record),
+        }
+      }, {
+        label: '匹配',
+        popConfirm: {
+          title: '确认从在售商品匹配该计划',
+          confirm: handleMach.bind(null, record),
+        }
+      }
+    ]
+  }
 
 </script>
 

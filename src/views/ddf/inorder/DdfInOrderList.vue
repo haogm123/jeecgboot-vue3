@@ -29,10 +29,6 @@
       <template #htmlSlot="{text}">
          <div v-html="text"></div>
       </template>
-     <template #img="{ text }">
-       <TableImg :size="60" :simpleShow="true" :imgList="text" />
-     </template>
-     <template #imgs="{ text }"> <TableImg :size="60" :imgList="text" /> </template>
       <!--省市区字段回显插槽-->
       <template #pcaSlot="{text}">
          {{ getAreaTextByCode(text) }}
@@ -43,53 +39,53 @@
       </template>
     </BasicTable>
     <!-- 表单区域 -->
-    <DdfCaGoodsModal @register="registerModal" @success="handleSuccess"></DdfCaGoodsModal>
+    <DdfInOrderModal @register="registerModal" @success="handleSuccess"></DdfInOrderModal>
   </div>
 </template>
 
-<script lang="ts" name="ddfcagoods-ddfCaGoods" setup>
+<script lang="ts" name="ddfinorder-ddfInOrder" setup>
   import {ref, computed, unref} from 'vue';
-  import {BasicTable, useTable, TableAction, TableImg} from '/@/components/Table';
-  import {useModal} from '/@/components/Modal';
+  import {BasicTable, useTable, TableAction} from '/@/components/Table';
   import { useListPage } from '/@/hooks/system/useListPage'
-  import DdfCaGoodsModal from './components/DdfCaGoodsModal.vue'
-  import {columns, searchFormSchema} from './DdfCaGoods.data';
-  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './DdfCaGoods.api';
-  import { downloadFile } from '/@/utils/common/renderUtils';
+  import {useModal} from '/@/components/Modal';
+  import DdfInOrderModal from './components/DdfInOrderModal.vue'
+  import {columns, searchFormSchema} from './DdfInOrder.data';
+  import {list, deleteOne, batchDelete, getImportUrl,getExportUrl} from './DdfInOrder.api';
+  import {downloadFile} from '/@/utils/common/renderUtils';
   const checkedKeys = ref<Array<string | number>>([]);
   //注册model
   const [registerModal, {openModal}] = useModal();
-  //注册table数据
+   //注册table数据
   const { prefixCls,tableContext,onExportXls,onImportXls } = useListPage({
       tableProps:{
-           title: '平台商品',
+           title: '内部订单',
            api: list,
            columns,
            canResize:false,
            formConfig: {
-              //labelWidth: 120,
-              schemas: searchFormSchema,
-              autoSubmitOnEnter:true,
-              showAdvancedButton:true,
-              fieldMapToNumber: [
-              ],
-              fieldMapToTime: [
-              ],
+                //labelWidth: 120,
+                schemas: searchFormSchema,
+                autoSubmitOnEnter:true,
+                showAdvancedButton:true,
+                fieldMapToNumber: [
+                ],
+                fieldMapToTime: [
+                ],
             },
            actionColumn: {
                width: 120,
                fixed:'right'
-            },
-      },
-       exportConfig: {
-            name:"平台商品",
+           },
+        },
+        exportConfig: {
+            name:"内部订单",
             url: getExportUrl,
-          },
-          importConfig: {
+        },
+        importConfig: {
             url: getImportUrl,
             success: handleSuccess
-          },
-  })
+        },
+    })
 
   const [registerTable, {reload},{ rowSelection, selectedRowKeys }] = tableContext
 
@@ -151,24 +147,25 @@
          }
        ]
    }
-     /**
-        * 下拉操作栏
-        */
-  function getDropDownAction(record){
-       return [
-         {
-           label: '详情',
-           onClick: handleDetail.bind(null, record),
-         }, {
-           label: '删除',
-           popConfirm: {
-             title: '是否确认删除',
-             confirm: handleDelete.bind(null, record),
-           }
-         }
-       ]
-   }
 
+
+  /**
+   * 下拉操作栏
+   */
+  function getDropDownAction(record){
+    return [
+      {
+        label: '详情',
+        onClick: handleDetail.bind(null, record),
+      }, {
+        label: '删除',
+        popConfirm: {
+          title: '是否确认删除',
+          confirm: handleDelete.bind(null, record),
+        }
+      }
+    ]
+  }
 
 </script>
 

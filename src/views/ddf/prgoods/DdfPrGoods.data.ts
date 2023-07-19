@@ -67,10 +67,14 @@ export const columns: BasicColumn[] = [
     align:"center",
     dataIndex: 'erpId'
   },
+
   {
     title: '状态',
     align:"center",
-    dataIndex: 'status'
+    dataIndex: 'status',
+    customRender: ({ text }) => {
+      return render.renderDict(text, 'pr_status');
+    },
   },
   {
     title: '扫描条码',
